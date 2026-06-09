@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import React from 'react'
 import {
-  ChevronLeft, Plus, Users, LayoutGrid, List, Settings2,
-  Edit2, Save, X, Trash2, CheckCircle2, AlertTriangle, Clock
+  ChevronLeft, Plus, Users, LayoutGrid, List,
+  Edit2, Save, X, Trash2
 } from 'lucide-react'
 import type { Task, Stage } from '../types'
 import { useProjects } from '../hooks/useProjects'
@@ -154,7 +155,7 @@ export default function ProjectDetail() {
 
         {/* View tabs */}
         <div className="flex gap-1 mt-4 bg-surface-3 rounded-xl p-1 w-fit">
-          {([['board', LayoutGrid, 'Board'], ['list', List, 'List'], ['contacts', Users, 'Contacts']] as const).map(([v, Icon, label]) => (
+          {([['board', LayoutGrid, 'Board'], ['list', List, 'List'], ['contacts', Users, 'Contacts']] as [string, React.ElementType, string][]).map(([v, Icon, label]) => (
             <button
               key={v}
               onClick={() => setView(v)}
