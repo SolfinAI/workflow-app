@@ -79,17 +79,25 @@ export async function createProject(
   }
 
   if (isSupabaseConfigured && supabase) {
-    await supabase.from('projects').insert({
-      id: project.id, workflow_category: category, title, description,
-      status: 'active', created_at: now, updated_at: now,
-    })
-    for (const s of stages) {
-      await supabase.from('stages').insert({
-        id: s.id, project_id: projectId, title: s.title,
-        description: s.description, color: s.color, sort_order: s.sort_order, created_at: now,
+    try {
+      const { error: projectError } = await supabase.from('projects').insert({
+        id: project.id, workflow_category: category, title, description,
+        status: 'active', created_at: now, updated_at: now,
       })
+      if (projectError) console.error('Project insert error:', projectError)
+
+      for (const s of stages) {
+        const { error: stageError } = await supabase.from('stages').insert({
+          id: s.id, project_id: projectId, title: s.title,
+          description: s.description, color: s.color, sort_order: s.sort_order, created_at: now,
+        })
+        if (stageError) console.error('Stage insert error:', stageError)
+      }
+    } catch (err) {
+      console.error('Supabase error:', err)
     }
   } else {
+    console.log('Supabase not configured, using local storage')
     const projects = loadLocal()
     projects.unshift(project)
     saveLocal(projects)
