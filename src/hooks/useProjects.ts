@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { Project, WorkflowCategory } from '../types'
 import * as storage from '../lib/storage'
+import { supabase } from '../lib/supabase'
 
 export function useProjects() {
   const [projects, setProjects] = useState<Project[]>([])
@@ -21,6 +22,22 @@ export function useProjects() {
         load()
       }
     })
+
+    // Real-time Supabase subscriptions for cross-device sync
+    if (supabase) {
+      const channel = supabase
+        .channel('workflow_changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => load())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'stages' }, () => load())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => load())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'contacts' }, () => load())
+        .subscribe()
+
+      return () => {
+        channel.unsubscribe()
+        unsub()
+      }
+    }
     return unsub
   }, [load])
 
