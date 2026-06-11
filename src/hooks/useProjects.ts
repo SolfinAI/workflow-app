@@ -22,22 +22,6 @@ export function useProjects() {
         load()
       }
     })
-
-    // Real-time Supabase subscriptions for cross-device sync
-    if (supabase) {
-      const channel = supabase
-        .channel('workflow_changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => load())
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'stages' }, () => load())
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => load())
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'contacts' }, () => load())
-        .subscribe()
-
-      return () => {
-        channel.unsubscribe()
-        unsub()
-      }
-    }
     return unsub
   }, [load])
 
