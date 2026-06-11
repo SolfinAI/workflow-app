@@ -20,6 +20,8 @@ function AppInner() {
     await createProject(category, title, description)
   }
 
+  const isProjectDetail = /^\/projects\/[^/]+/.test(location.pathname)
+
   const pageTitle = () => {
     if (location.pathname === '/') return 'Dashboard'
     if (location.pathname === '/projects') return 'Projects'
@@ -40,9 +42,11 @@ function AppInner() {
 
       <main className="md:pl-64 pt-14">
         <div className="px-4 sm:px-6 py-6 max-w-7xl">
-          <div className="mb-6 flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-white">{pageTitle()}</h1>
-          </div>
+          {!isProjectDetail && (
+            <div className="mb-6 flex items-center justify-between">
+              <h1 className="text-2xl font-bold text-white">{pageTitle()}</h1>
+            </div>
+          )}
 
           {loading ? (
             <div className="flex items-center justify-center h-48">

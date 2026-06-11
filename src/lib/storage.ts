@@ -29,8 +29,9 @@ function broadcast(type: string, payload?: unknown) {
 
 export function onSyncMessage(handler: (msg: { type: string; payload?: unknown }) => void) {
   if (!bc) return () => {}
-  bc.onmessage = (e) => handler(e.data)
-  return () => { bc.onmessage = null }
+  const listener = (e: MessageEvent) => handler(e.data)
+  bc.addEventListener('message', listener)
+  return () => bc.removeEventListener('message', listener)
 }
 
 // ─── Project CRUD ─────────────────────────────────────────────────────────────
@@ -41,7 +42,20 @@ export async function getProjects(): Promise<Project[]> {
       .from('projects')
       .select(`*, stages(*, tasks(*)), contacts(*)`)
       .order('created_at', { ascending: false })
-    if (!error && data) return data as Project[]
+    if (error) console.error('getProjects error:', error)
+    if (!error && data) {
+      // PostgREST returns embedded rows unordered — sort here
+      const projects = data as Project[]
+      for (const p of projects) {
+        p.stages = (p.stages ?? []).sort((a, b) => a.sort_order - b.sort_order)
+        p.contacts = p.contacts ?? []
+        for (const s of p.stages) {
+          s.tasks = (s.tasks ?? []).sort((a, b) =>
+            a.sort_order - b.sort_order || a.created_at.localeCompare(b.created_at))
+        }
+      }
+      return projects
+    }
   }
   return loadLocal()
 }
@@ -130,11 +144,11 @@ export async function deleteProject(id: string): Promise<void> {
 
 // ─── Stage CRUD ───────────────────────────────────────────────────────────────
 
-export async function addStage(projectId: string, title: string, color: string, description?: string): Promise<Stage> {
+export async function addStage(projectId: string, title: string, color: string, description?: string, sortOrder?: number): Promise<Stage> {
   const now = new Date().toISOString()
   const projects = loadLocal()
   const project = projects.find(p => p.id === projectId)
-  const sortOrder = project ? project.stages.length : 0
+  if (sortOrder === undefined) sortOrder = project ? project.stages.length : 0
 
   const stage: Stage = {
     id: uuidv4(), project_id: projectId, title, description, color,

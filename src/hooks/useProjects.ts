@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import type { RealtimeChannel } from '@supabase/supabase-js'
 import type { Project, WorkflowCategory } from '../types'
 import * as storage from '../lib/storage'
 import { supabase } from '../lib/supabase'
@@ -15,6 +16,7 @@ export function useProjects() {
 
   useEffect(() => {
     load()
+
     const unsub = storage.onSyncMessage((msg) => {
       if (['project_created','project_updated','project_deleted',
            'stage_added','stage_updated','stage_deleted',
@@ -22,7 +24,45 @@ export function useProjects() {
         load()
       }
     })
-    return unsub
+
+    // Debounce realtime bursts (creating a project fires ~10 row events at once)
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null
+    const debouncedLoad = () => {
+      if (debounceTimer) clearTimeout(debounceTimer)
+      debounceTimer = setTimeout(load, 300)
+    }
+
+    // Each hook instance gets its own uniquely-named channel — sharing one
+    // channel topic across components throws "cannot add postgres_changes
+    // callbacks after subscribe()".
+    let channel: RealtimeChannel | null = null
+    if (supabase) {
+      channel = supabase
+        .channel(`workflow_sync_${Math.random().toString(36).slice(2)}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, debouncedLoad)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'stages' }, debouncedLoad)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, debouncedLoad)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'contacts' }, debouncedLoad)
+        .subscribe()
+    }
+
+    // Refetch when the app regains focus (critical for iOS home-screen apps)
+    const onFocus = () => load()
+    const onVisible = () => { if (document.visibilityState === 'visible') load() }
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onVisible)
+
+    // Polling fallback in case the realtime socket drops
+    const poll = window.setInterval(load, 30000)
+
+    return () => {
+      unsub()
+      if (debounceTimer) clearTimeout(debounceTimer)
+      if (supabase && channel) supabase.removeChannel(channel)
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onVisible)
+      window.clearInterval(poll)
+    }
   }, [load])
 
   const createProject = async (category: WorkflowCategory, title: string, description?: string) => {

@@ -50,7 +50,7 @@ export default function ProjectDetail() {
   const handleAddStage = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newStageName.trim() || !project) return
-    await storage.addStage(project.id, newStageName.trim(), newStageColor)
+    await storage.addStage(project.id, newStageName.trim(), newStageColor, undefined, project.stages.length)
     setNewStageName('')
     setShowAddStage(false)
     reload()
@@ -69,10 +69,18 @@ export default function ProjectDetail() {
     setEditingTitle(false)
   }
 
-  if (loading) return <div className="flex items-center justify-center h-64 text-slate-500">Loading…</div>
+  if (loading) return <div className="flex items-center justify-center h-64 text-white">Loading project…</div>
   if (!project) return (
     <div className="text-center py-16">
-      <p className="text-slate-400 mb-4">Project not found</p>
+      <p className="text-slate-400 mb-4">Project not found (ID: {id})</p>
+      <Link to="/projects" className="text-brand-400 hover:underline">← Back to Projects</Link>
+    </div>
+  )
+
+  if (!project.stages || project.stages.length === 0) return (
+    <div className="text-center py-16">
+      <p className="text-slate-400 mb-4">No stages found for this project</p>
+      <p className="text-xs text-slate-500 mb-4">Project: {project.title}</p>
       <Link to="/projects" className="text-brand-400 hover:underline">← Back to Projects</Link>
     </div>
   )
