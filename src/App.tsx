@@ -6,6 +6,7 @@ import NewProjectModal from './components/NewProjectModal'
 import Dashboard from './pages/Dashboard'
 import Projects from './pages/Projects'
 import ProjectDetail from './pages/ProjectDetail'
+import Tasks from './pages/Tasks'
 import Settings from './pages/Settings'
 import { useProjects } from './hooks/useProjects'
 import type { WorkflowCategory } from './types'
@@ -13,7 +14,7 @@ import type { WorkflowCategory } from './types'
 function AppInner() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [showNewProject, setShowNewProject] = useState(false)
-  const { projects, loading, createProject, deleteProject } = useProjects()
+  const { projects, loading, reload, createProject, deleteProject } = useProjects()
   const location = useLocation()
 
   const handleCreate = async (category: WorkflowCategory, title: string, description?: string) => {
@@ -25,6 +26,7 @@ function AppInner() {
   const pageTitle = () => {
     if (location.pathname === '/') return 'Dashboard'
     if (location.pathname === '/projects') return 'Projects'
+    if (location.pathname === '/tasks') return 'All Tasks'
     if (location.pathname === '/settings') return 'Settings'
     return 'Project'
   }
@@ -65,6 +67,7 @@ function AppInner() {
                 />
               } />
               <Route path="/projects/:id" element={<ProjectDetail />} />
+              <Route path="/tasks" element={<Tasks projects={projects} reload={reload} />} />
               <Route path="/settings" element={<Settings />} />
             </Routes>
           )}

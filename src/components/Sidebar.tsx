@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, FolderOpen, Settings, Plus, X } from 'lucide-react'
+import { LayoutDashboard, FolderOpen, ListTodo, Settings, Plus, X } from 'lucide-react'
 import { WORKFLOW_TEMPLATES } from '../lib/templates'
 import type { Project } from '../types'
 
@@ -41,6 +41,10 @@ export default function Sidebar({ projects, open, onClose, onNewProject }: Props
           <NavLink to="/projects" className={navClass} onClick={onClose}>
             <FolderOpen size={18} />
             All Projects
+          </NavLink>
+          <NavLink to="/tasks" className={navClass} onClick={onClose}>
+            <ListTodo size={18} />
+            All Tasks
           </NavLink>
 
           {/* Workflow categories */}

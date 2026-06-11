@@ -5,7 +5,7 @@ export type WorkflowCategory =
 
 export type Priority = 'low' | 'medium' | 'high' | 'critical'
 export type TaskStatus = 'todo' | 'in_progress' | 'blocked' | 'done'
-export type ProjectStatus = 'active' | 'on_hold' | 'completed' | 'archived'
+export type ProjectStatus = 'active' | 'on_hold' | 'bid_submitted' | 'won' | 'lost' | 'completed' | 'archived'
 
 export interface Contact {
   id: string

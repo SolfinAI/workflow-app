@@ -5,9 +5,9 @@ import {
   ChevronLeft, Plus, Users, LayoutGrid, List,
   Edit2, Save, X, Trash2
 } from 'lucide-react'
-import type { Task, Stage } from '../types'
+import type { Task, Stage, ProjectStatus } from '../types'
 import { useProjects } from '../hooks/useProjects'
-import { WORKFLOW_TEMPLATES, STAGE_COLORS } from '../lib/templates'
+import { WORKFLOW_TEMPLATES, STAGE_COLORS, PROJECT_STATUS_CONFIG } from '../lib/templates'
 import StageColumn from '../components/StageColumn'
 import TaskModal from '../components/TaskModal'
 import ContactsPanel from '../components/ContactsPanel'
@@ -127,6 +127,16 @@ export default function ProjectDetail() {
             </div>
             <p className="text-sm text-slate-500 mt-0.5 ml-7">{tpl?.label}</p>
           </div>
+          <select
+            value={project.status}
+            onChange={e => updateProject(project.id, { status: e.target.value as ProjectStatus })}
+            className={`text-xs font-medium rounded-xl px-3 py-2 border border-white/10 bg-surface-3 cursor-pointer
+              focus:outline-none focus:border-brand-500/60 ${PROJECT_STATUS_CONFIG[project.status]?.classes ?? 'text-white'}`}
+          >
+            {Object.entries(PROJECT_STATUS_CONFIG).map(([k, v]) => (
+              <option key={k} value={k}>{v.label}</option>
+            ))}
+          </select>
           <button onClick={handleDelete} className="p-2 rounded-xl hover:bg-red-500/10 text-slate-500 hover:text-red-400 transition-colors">
             <Trash2 size={16} />
           </button>

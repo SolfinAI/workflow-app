@@ -136,6 +136,16 @@ export const PRIORITY_CONFIG = {
   critical: { label: 'Critical', color: '#ef4444', bg: 'bg-red-900/50' },
 }
 
+export const PROJECT_STATUS_CONFIG = {
+  active:        { label: 'Active',        classes: 'bg-emerald-500/15 text-emerald-400' },
+  on_hold:       { label: 'On Hold',       classes: 'bg-amber-500/15 text-amber-400' },
+  bid_submitted: { label: 'Bid Submitted', classes: 'bg-sky-500/15 text-sky-400' },
+  won:           { label: 'Bid Won',       classes: 'bg-yellow-500/15 text-yellow-300' },
+  lost:          { label: 'Bid Lost',      classes: 'bg-red-500/15 text-red-400' },
+  completed:     { label: 'Completed',     classes: 'bg-blue-500/15 text-blue-400' },
+  archived:      { label: 'Archived',      classes: 'bg-slate-700/50 text-slate-500' },
+} as const
+
 export const STATUS_CONFIG = {
   todo:        { label: 'To Do',       color: '#64748b', dot: 'bg-slate-500' },
   in_progress: { label: 'In Progress', color: '#6366f1', dot: 'bg-indigo-500' },

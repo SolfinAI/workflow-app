@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Plus, Search, Filter, ArrowRight, Trash2 } from 'lucide-react'
+import { Plus, Search, ArrowRight, Trash2 } from 'lucide-react'
 import type { Project, WorkflowCategory } from '../types'
-import { WORKFLOW_TEMPLATES } from '../lib/templates'
+import { WORKFLOW_TEMPLATES, PROJECT_STATUS_CONFIG } from '../lib/templates'
 import { isPast, parseISO } from 'date-fns'
 
 interface Props {
@@ -11,15 +11,37 @@ interface Props {
   onDeleteProject: (id: string) => void
 }
 
+const STATUS_FILTERS = [
+  { key: null,            label: 'Any Status' },
+  { key: 'active',        label: 'Active' },
+  { key: 'on_hold',       label: 'On Hold' },
+  { key: 'bid',           label: 'Bid Submitted +' },
+  { key: 'won',           label: 'Won' },
+  { key: 'lost',          label: 'Lost' },
+  { key: 'completed',     label: 'Completed' },
+] as const
+
 export default function Projects({ projects, onNewProject, onDeleteProject }: Props) {
   const [search, setSearch] = useState('')
   const [searchParams, setSearchParams] = useSearchParams()
   const filterCat = searchParams.get('category') as WorkflowCategory | null
+  const filterStatus = searchParams.get('status')
+
+  const setParam = (key: string, value: string | null) => {
+    const next = new URLSearchParams(searchParams)
+    if (value) next.set(key, value)
+    else next.delete(key)
+    setSearchParams(next)
+  }
 
   const filtered = projects.filter(p => {
     const matchCat = !filterCat || p.workflow_category === filterCat
+    const matchStatus = !filterStatus ||
+      (filterStatus === 'bid'
+        ? ['bid_submitted', 'won', 'lost'].includes(p.status)
+        : p.status === filterStatus)
     const matchSearch = !search || p.title.toLowerCase().includes(search.toLowerCase())
-    return matchCat && matchSearch
+    return matchCat && matchStatus && matchSearch
   })
 
   return (
@@ -45,17 +67,17 @@ export default function Projects({ projects, onNewProject, onDeleteProject }: Pr
       {/* Category filter pills */}
       <div className="flex gap-2 flex-wrap">
         <button
-          onClick={() => setSearchParams({})}
+          onClick={() => setParam('category', null)}
           className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${
             !filterCat ? 'bg-brand-500/20 border-brand-500/30 text-brand-400' : 'border-white/10 text-slate-500 hover:text-white hover:border-white/20'
           }`}
         >
-          All
+          All Types
         </button>
         {WORKFLOW_TEMPLATES.map(t => (
           <button
             key={t.category}
-            onClick={() => setSearchParams({ category: t.category })}
+            onClick={() => setParam('category', t.category)}
             className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-all flex items-center gap-1.5 ${
               filterCat === t.category ? 'bg-brand-500/20 border-brand-500/30 text-brand-400' : 'border-white/10 text-slate-500 hover:text-white hover:border-white/20'
             }`}
@@ -63,6 +85,24 @@ export default function Projects({ projects, onNewProject, onDeleteProject }: Pr
             {t.icon} {t.label}
           </button>
         ))}
+      </div>
+
+      {/* Status filter pills */}
+      <div className="flex gap-2 flex-wrap">
+        {STATUS_FILTERS.map(f => {
+          const active = filterStatus === f.key || (!filterStatus && f.key === null)
+          return (
+            <button
+              key={f.label}
+              onClick={() => setParam('status', f.key)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${
+                active ? 'bg-brand-500/20 border-brand-500/30 text-brand-400' : 'border-white/10 text-slate-500 hover:text-white hover:border-white/20'
+              }`}
+            >
+              {f.label}
+            </button>
+          )
+        })}
       </div>
 
       {filtered.length === 0 ? (
@@ -89,6 +129,9 @@ export default function Projects({ projects, onNewProject, onDeleteProject }: Pr
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-semibold text-sm text-white truncate">{p.title}</h3>
+                      <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${PROJECT_STATUS_CONFIG[p.status]?.classes ?? 'bg-slate-700/50 text-slate-500'}`}>
+                        {PROJECT_STATUS_CONFIG[p.status]?.label ?? p.status}
+                      </span>
                       {overdue > 0 && (
                         <span className="text-xs text-red-400 shrink-0">⚠ {overdue} overdue</span>
                       )}

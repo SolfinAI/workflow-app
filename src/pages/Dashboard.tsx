@@ -1,8 +1,8 @@
-import { useNavigate, Link } from 'react-router-dom'
-import { Plus, TrendingUp, Clock, CheckCircle2, AlertTriangle, ArrowRight } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Plus, TrendingUp, Clock, CheckCircle2, AlertTriangle, ArrowRight, ListTodo, Send, Trophy } from 'lucide-react'
 import type { Project } from '../types'
-import { WORKFLOW_TEMPLATES, STATUS_CONFIG } from '../lib/templates'
-import { format, parseISO, isPast } from 'date-fns'
+import { WORKFLOW_TEMPLATES, PROJECT_STATUS_CONFIG } from '../lib/templates'
+import { parseISO, isPast } from 'date-fns'
 
 interface Props {
   projects: Project[]
@@ -60,13 +60,8 @@ function ProjectCard({ project }: { project: Project }) {
               {overdue} overdue
             </span>
           )}
-          <span className={`ml-auto px-2 py-0.5 rounded-full text-xs ${
-            project.status === 'active'    ? 'bg-emerald-500/15 text-emerald-400' :
-            project.status === 'on_hold'   ? 'bg-amber-500/15 text-amber-400' :
-            project.status === 'completed' ? 'bg-blue-500/15 text-blue-400' :
-                                              'bg-slate-700/50 text-slate-500'
-          }`}>
-            {project.status.replace('_', ' ')}
+          <span className={`ml-auto px-2 py-0.5 rounded-full text-xs ${PROJECT_STATUS_CONFIG[project.status]?.classes ?? 'bg-slate-700/50 text-slate-500'}`}>
+            {PROJECT_STATUS_CONFIG[project.status]?.label ?? project.status}
           </span>
         </div>
       </div>
@@ -78,7 +73,9 @@ export default function Dashboard({ projects, onNewProject }: Props) {
   const activeProjects = projects.filter(p => p.status === 'active')
   const allTasks = projects.flatMap(p => p.stages.flatMap(s => s.tasks))
   const overdueCount = allTasks.filter(t => t.due_date && t.status !== 'done' && isPast(parseISO(t.due_date))).length
-  const doneThisWeek = allTasks.filter(t => t.status === 'done').length
+  const doneCount = allTasks.filter(t => t.status === 'done').length
+  const bidCount = projects.filter(p => ['bid_submitted', 'won', 'lost'].includes(p.status)).length
+  const wonCount = projects.filter(p => p.status === 'won').length
 
   const byCategory = WORKFLOW_TEMPLATES.map(tpl => ({
     ...tpl,
@@ -87,19 +84,28 @@ export default function Dashboard({ projects, onNewProject }: Props) {
 
   return (
     <div className="space-y-8">
-      {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {/* Stats — each card links to its filtered view */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
         {[
-          { label: 'Active Projects', value: activeProjects.length, icon: TrendingUp, color: 'text-brand-400' },
-          { label: 'Total Tasks', value: allTasks.length, icon: CheckCircle2, color: 'text-emerald-400' },
-          { label: 'Overdue', value: overdueCount, icon: AlertTriangle, color: overdueCount > 0 ? 'text-red-400' : 'text-slate-500' },
-          { label: 'Completed', value: doneThisWeek, icon: CheckCircle2, color: 'text-blue-400' },
+          { label: 'Active Projects', value: activeProjects.length, icon: TrendingUp, color: 'text-brand-400', to: '/projects?status=active' },
+          { label: 'Total Tasks', value: allTasks.length, icon: ListTodo, color: 'text-emerald-400', to: '/tasks' },
+          { label: 'Overdue', value: overdueCount, icon: AlertTriangle, color: overdueCount > 0 ? 'text-red-400' : 'text-slate-500', to: '/tasks?filter=overdue' },
+          { label: 'Completed', value: doneCount, icon: CheckCircle2, color: 'text-blue-400', to: '/tasks?filter=done' },
+          { label: 'Projects Bid', value: bidCount, icon: Send, color: 'text-sky-400', to: '/projects?status=bid' },
+          { label: 'Bids Won', value: wonCount, icon: Trophy, color: 'text-yellow-300', to: '/projects?status=won' },
         ].map(stat => (
-          <div key={stat.label} className="bg-surface-2 border border-white/5 rounded-2xl p-4">
-            <stat.icon size={18} className={`${stat.color} mb-2`} />
+          <Link
+            key={stat.label}
+            to={stat.to}
+            className="bg-surface-2 hover:bg-surface-3 border border-white/5 hover:border-brand-500/30 rounded-2xl p-4 transition-all group"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <stat.icon size={18} className={stat.color} />
+              <ArrowRight size={13} className="text-slate-700 group-hover:text-brand-400 transition-colors" />
+            </div>
             <p className="text-2xl font-bold text-white">{stat.value}</p>
             <p className="text-xs text-slate-500 mt-0.5">{stat.label}</p>
-          </div>
+          </Link>
         ))}
       </div>
 
